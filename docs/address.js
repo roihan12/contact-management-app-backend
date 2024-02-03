@@ -21,7 +21,7 @@ const internalServerError = {
   },
 };
 
-const contactNotFound = {
+const addressNotFound = {
   description: "Resource not found",
   content: {
     "application/json": {
@@ -30,11 +30,11 @@ const contactNotFound = {
         properties: {
           errors: {
             type: "array",
-            example: ["Contact not found"],
+            example: ["Address not found"],
           },
           message: {
             type: "string",
-            example: "Get contact failed",
+            example: "Get address failed",
           },
           data: {
             type: "string",
@@ -46,7 +46,7 @@ const contactNotFound = {
   },
 };
 
-const invalidContactData = {
+const invalidAddressData = {
   description: "Invalid Data provided",
   content: {
     "application/json": {
@@ -55,11 +55,11 @@ const invalidContactData = {
         properties: {
           errors: {
             type: "array",
-            example: ["firstName is requred", "email is required"],
+            example: ["city is requred", "street is required"],
           },
           message: {
             type: "string",
-            example: "Create a new contact failed",
+            example: "Create a new address failed",
           },
           data: {
             type: "string",
@@ -71,102 +71,109 @@ const invalidContactData = {
   },
 };
 
-const createContactBody = {
+const createAddressBody = {
   type: "object",
   properties: {
-    firstName: {
+    addressType: {
       type: "string",
-      example: "Jane",
+      example: "Home",
     },
-    lastName: {
+
+    street: {
       type: "string",
-      example: "Doe",
+      example: "Jl. absolute street",
     },
-    email: {
+
+    city: {
       type: "string",
-      example: "janedoe@example.com",
+      example: "Jakarta Pusat",
     },
-    phone: {
+
+    province: {
       type: "string",
-      example: "085777333999",
+      example: "Jakarta",
     },
-    address: {
-      type: "array",
-      example: [
-        {
-          addressType: "Home",
-          street: "Jl. absolute street",
-          city: "Jakarta Pusat",
-          province: "Jakarta",
-          country: "Indonesia",
-          zipcode: "123456",
-          contactId: "fcb655047cdc49fdgdf656",
-        },
-      ],
+    country: {
+      type: "string",
+      example: "Indonesia",
+    },
+    zipcode: {
+      type: "string",
+      example: "123456",
+    },
+
+    contactId: {
+      type: "string",
+      example: "fcb655047cdc49fdgdf656",
     },
   },
 };
 
-const updateContactBody = {
+const updateAddressBody = {
   type: "object",
   properties: {
-    firstName: {
+    addressType: {
       type: "string",
-      example: "Jane",
+      example: "Office",
     },
-    lastName: {
+    street: {
       type: "string",
-      example: "Alice",
+      example: "Jl. Bandung",
     },
-    email: {
+    city: {
       type: "string",
-      example: "janealice@example.com",
+      example: "Bandung",
     },
-    phone: {
+    province: {
       type: "string",
-      example: "081234488555",
+      example: "Jawa Barat",
+    },
+    country: {
+      type: "string",
+      example: "Indonesia",
+    },
+    zipcode: {
+      type: "string",
+      example: "456789",
+    },
+    contactId: {
+      type: "string",
+      example: "fcb655047cdc49fdgdf656",
     },
   },
 };
 
-const ContactResponse = {
-  id: "fcb655047cdc49fdgdf656",
-  firstName: "Jane",
-  lastName: "Alice",
-  email: "janealice@example.com",
-  phone: "085777333999",
-  address: [
-    {
-      addressType: "Home",
-      street: "Jl. absolute street",
-      city: "Jakarta Pusat",
-      province: "Jakarta",
-      country: "Indonesia",
-      zipcode: "123456",
-      contactId: "fcb655047cdc49fdgdf656",
-    },
-  ],
-  userId: "60564fcb544047cdc3844818",
+const addressResponse = {
+  id: "55047cdc49fdgfgi2002",
+  addressType: "Home",
+  street: "Jl. absolute street",
+  city: "Jakarta Pusat",
+  province: "Jakarta",
+  country: "Indonesia",
+  zipcode: "123456",
+  contactId: "fcb655047cdc49fdgdf656",
 };
 
-const ContactResponseUpdate = {
-  id: "fcb655047cdc49fdgdf656",
-  firstName: "Jane",
-  lastName: "Doe",
-  email: "janedoe@example.com",
-  phone: "081234488555",
-  userId: "60564fcb544047cdc3844818",
+const addressResponseUpdate = {
+  id: "55047cdc49fdgfgi2002",
+  addressType: "Office",
+  street: "Jl. Bandung",
+  city: "Bandung",
+  province: "Jawa Barat",
+  country: "Indonesia",
+  zipcode: "456789",
+  contactId: "fcb655047cdc49fdgdf656",
 };
-const createContact = {
-  tags: ["Contacts"],
-  description: "Create contact endpoint",
-  operationId: "createContact",
+const createAddress = {
+  tags: ["Address"],
+  description: "Create address endpoint",
+  operationId: "createAddress",
   security,
   requestBody: {
     content: {
       "application/json": {
         schema: {
-          $ref: "#/components/schemas/createContactBody",
+          $ref: "#/components/schemas/createAddressBody",
         },
       },
     },
@@ -174,7 +181,7 @@ const createContact = {
   },
   responses: {
     200: {
-      description: "Create contact successfully",
+      description: "Create address successfully",
       content: {
         "application/json": {
           schema: {
@@ -186,43 +193,35 @@ const createContact = {
               },
               message: {
                 type: "string",
-                example: "Create contact successfully",
+                example: "Create address successfully",
               },
               data: {
                 type: "object",
-                example: ContactResponse,
+                example: addressResponse,
               },
             },
           },
         },
       },
     },
-    400: invalidContactData,
+    400: invalidAddressData,
     500: internalServerError,
   },
 };
 
-const getContacts = {
-  tags: ["Contacts"],
-  description: "Get all contact or search for contacts",
-  operationId: "getContacts",
+const getAddresses = {
+  tags: ["Address"],
+  description: "Get all  or search for contacts",
+  operationId: "getAddresses",
   security: [
     {
       bearerAuth: [],
     },
   ],
-  parameters: [
-    {
-      name: "search",
-      in: "query",
-      description: "Search contact",
-      type: "string",
-    },
-  ],
 
   responses: {
     200: {
-      description: "Get Contacts successfully",
+      description: "Get all address successfully",
       content: {
         "application/json": {
           schema: {
@@ -234,26 +233,26 @@ const getContacts = {
               },
               message: {
                 type: "string",
-                example: "Get Contacts successfully",
+                example: "Get all address successfully",
               },
               data: {
                 type: "array",
-                example: [ContactResponse, ContactResponse],
+                example: [addressResponse, addressResponse],
               },
             },
           },
         },
       },
     },
-    404: contactNotFound,
+    404: addressNotFound,
     500: internalServerError,
   },
 };
 
-const getContact = {
-  tags: ["Contacts"],
-  description: "Get one contact",
-  operationId: "getContact",
+const getAddress = {
+  tags: ["Address"],
+  description: "Get one address",
+  operationId: "getAdress",
   security: [
     {
       bearerAuth: [],
@@ -263,7 +262,7 @@ const getContact = {
     {
       name: "id",
       in: "path",
-      description: "Contact ID",
+      description: "Address ID",
       required: true,
       type: "string",
     },
@@ -271,7 +270,7 @@ const getContact = {
 
   responses: {
     200: {
-      description: "Get Contact successfully",
+      description: "Get address successfully",
       content: {
         "application/json": {
           schema: {
@@ -283,32 +282,32 @@ const getContact = {
               },
               message: {
                 type: "string",
-                example: "Get Contact successfully",
+                example: "Get address successfully",
               },
               data: {
                 type: "object",
-                example: ContactResponse,
+                example: addressResponse,
               },
             },
           },
         },
       },
     },
-    404: contactNotFound,
+    404: addressNotFound,
     500: internalServerError,
   },
 };
 
-const updateContact = {
-  tags: ["Contacts"],
-  description: "Update a Contact",
-  operationId: "updateContact",
+const updateAddress = {
+  tags: ["Address"],
+  description: "Update a address",
+  operationId: "updateAddress",
   security,
   parameters: [
     {
       name: "id",
       in: "path",
-      description: "Contact ID",
+      description: "Address ID",
       required: true,
       type: "string",
     },
@@ -317,7 +316,7 @@ const updateContact = {
     content: {
       "application/json": {
         schema: {
-          $ref: "#/components/schemas/updateContactBody",
+          $ref: "#/components/schemas/updateAddressBody",
         },
       },
     },
@@ -325,7 +324,7 @@ const updateContact = {
   },
   responses: {
     200: {
-      description: "Update contact successfully",
+      description: "Update address successfully",
       content: {
         "application/json": {
           schema: {
@@ -337,39 +336,39 @@ const updateContact = {
               },
               message: {
                 type: "string",
-                example: "Update contact successfully",
+                example: "Update address successfully",
               },
               data: {
                 type: "object",
-                example: ContactResponseUpdate,
+                example: addressResponseUpdate,
               },
             },
           },
         },
       },
     },
-    404: contactNotFound,
+    404: addressNotFound,
     500: internalServerError,
   },
 };
 
-const deleteContact = {
-  tags: ["Contacts"],
-  description: "Delete a Contact",
-  operationId: "deleteContact",
+const deleteAddress = {
+  tags: ["Address"],
+  description: "Delete a address",
+  operationId: "deleteAddress",
   security,
   parameters: [
     {
       name: "id",
       in: "path",
-      description: "Contact ID",
+      description: "Address ID",
       required: true,
       type: "string",
     },
   ],
   responses: {
     200: {
-      description: "Delete contact successfully",
+      description: "Delete address successfully",
       content: {
         "application/json": {
           schema: {
@@ -381,7 +380,7 @@ const deleteContact = {
               },
               message: {
                 type: "string",
-                example: "Delete contact successfully",
+                example: "Delete address successfully",
               },
               data: {
                 type: "object",
@@ -392,10 +391,17 @@ const deleteContact = {
         },
       },
     },
-    404: contactNotFound,
+    404: addressNotFound,
     500: internalServerError,
   },
 };
 
-
-export { createContact, createContactBody, getContacts, getContact, updateContact, updateContactBody, deleteContact};
+export {
+  createAddress,
+  createAddressBody,
+  getAddresses,
+  getAddress,
+  updateAddress,
+  updateAddressBody,
+  deleteAddress,
+};

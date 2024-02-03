@@ -14,7 +14,20 @@ import {
   createContactBody,
   getContacts,
   getContact,
+  updateContact,
+  updateContactBody,
+  deleteContact,
 } from "./contacts.js";
+
+import {
+  createAddress,
+  createAddressBody,
+  getAddresses,
+  getAddress,
+  updateAddress,
+  updateAddressBody,
+  deleteAddress,
+} from "./address.js";
 
 const apiDocumentation = {
   openapi: "3.0.1",
@@ -81,6 +94,17 @@ const apiDocumentation = {
     },
     "contacts/:id": {
       get: getContact,
+      put: updateContact,
+      delete: deleteContact,
+    },
+    address: {
+      post: createAddress,
+      get: getAddresses,
+    },
+    "address/:id": {
+      get: getAddress,
+      put: updateAddress,
+      delete: deleteAddress,
     },
   },
   components: {
@@ -96,6 +120,9 @@ const apiDocumentation = {
       loginUserBody,
       updateUserBody,
       createContactBody,
+      updateContactBody,
+      createAddressBody,
+      updateAddressBody,
     },
   },
 };
