@@ -1,5 +1,7 @@
+import { Op } from "sequelize";
 import User from "../models/userModel.js";
 import sequelize from "../utils/db.js";
+import { sendEmail } from "../utils/sendMail.js";
 import { dataValid } from "../validation/dataValidation.js";
 
 const register = async (req, res, next) => {
@@ -10,7 +12,6 @@ const register = async (req, res, next) => {
     password: "required,isStrongPassword",
   };
   try {
-    // const userReq = req.body;
     const userReq = await dataValid(valid, req.body);
     if (userReq.validateMessage.length > 0) {
       return res.status(400).json({
@@ -61,18 +62,33 @@ const register = async (req, res, next) => {
         transaction: t,
       }
     );
-    await t.commit();
-    res.status(201).json({
-      errors: null,
-      mesage: "User created successfully",
-      data: {
-        userId: newUser.userId,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        createdAt: newUser.createdAt,
-        expireTime: newUser.expireTime,
-      },
-    });
+    const payloadEmail = {
+      fullName: newUser.fullName,
+      email: newUser.email,
+      token: newUser.userId,
+    };
+    const result = await sendEmail(payloadEmail);
+    if (!result) {
+      await t.rollback();
+      return res.status(500).json({
+        errors: ["Send email failed"],
+        message: "Register failed",
+        data: null,
+      });
+    } else {
+      await t.commit();
+      res.status(201).json({
+        errors: null,
+        mesage: "User created successfully, please check your email!",
+        data: {
+          userId: newUser.userId,
+          fullName: newUser.fullName,
+          email: newUser.email,
+          createdAt: newUser.createdAt,
+          expireTime: newUser.expireTime,
+        },
+      });
+    }
   } catch (error) {
     await t.rollback();
     next(
@@ -81,4 +97,45 @@ const register = async (req, res, next) => {
   }
 };
 
-export { register };
+const activationAccount = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findOne({
+      where: {
+        userId: userId,
+        isActive: false,
+        expireTime: {
+          [Op.gte]: new Date(),
+        },
+      },
+    });
+    if (!user) {
+      return res.status(404).json({
+        errors: ["User not found or expired"],
+        message: "Activation account failed",
+        data: null,
+      });
+    } else {
+      user.isActive = true;
+      user.expireTime = null;
+      await user.save();
+      return res.status(200).json({
+        errors: [],
+        mesage: "Activation account successfully",
+        data: {
+          fullName: user.fullName,
+          email: user.email,
+        },
+      });
+    }
+  } catch (error) {
+    next(
+      new Error(
+        "controllers/authController.js:activationAccount: - " + error.message
+      )
+    );
+  }
+};
+
+export { register, activationAccount };

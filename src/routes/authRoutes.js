@@ -1,8 +1,9 @@
 import express from 'express';
-import { register } from '../controllers/authController.js';
+import { register,activationAccount } from '../controllers/authController.js';
 
 const authRoutes = express.Router();
 
 authRoutes.post("/register", register)
+authRoutes.get("/activation/:id", activationAccount)
 
 export default authRoutes
