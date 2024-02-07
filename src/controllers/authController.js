@@ -1,13 +1,27 @@
 import User from "../models/userModel.js";
 import sequelize from "../utils/db.js";
+import { dataValid } from "../validation/dataValidation.js";
 
 const register = async (req, res, next) => {
+  const t = await sequelize.transaction();
+  const valid = {
+    fullName: "required",
+    email: "required,isEmail",
+    password: "required,isStrongPassword",
+  };
   try {
-    const t = await sequelize.transaction();
-    const userReq = req.body;
+    // const userReq = req.body;
+    const userReq = await dataValid(valid, req.body);
+    if (userReq.validateMessage.length > 0) {
+      return res.status(400).json({
+        errors: userReq.validateMessage,
+        message: "Register failed",
+        data: null,
+      });
+    }
     const userExists = await User.findAll({
       where: {
-        email: userReq.email,
+        email: userReq.data.email,
       },
     });
     if (userExists.length > 0 && userExists[0].isActive) {
@@ -27,16 +41,20 @@ const register = async (req, res, next) => {
         data: null,
       });
     } else {
-      User.destroy({
-        where: {
-          email: userReq.email,
+      User.destroy(
+        {
+          where: {
+            email: userReq.data.email,
+          },
         },
-      });
+        {
+          transaction: t,
+        }
+      );
     }
-
     const newUser = await User.create(
       {
-        ...userReq,
+        ...userReq.data,
         expireTime: new Date(),
       },
       {
@@ -56,6 +74,7 @@ const register = async (req, res, next) => {
       },
     });
   } catch (error) {
+    await t.rollback();
     next(
       new Error("controllers/authController.js:register: - " + error.message)
     );
