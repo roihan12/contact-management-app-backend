@@ -3,6 +3,8 @@ import User from "../models/userModel.js";
 import sequelize from "../utils/db.js";
 import { sendEmail } from "../utils/sendMail.js";
 import { dataValid } from "../validation/dataValidation.js";
+import { compare } from "../utils/bcrypt.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 
 const register = async (req, res, next) => {
   const t = await sequelize.transaction();
@@ -92,7 +94,7 @@ const register = async (req, res, next) => {
   } catch (error) {
     await t.rollback();
     next(
-      new Error("controllers/authController.js:register: - " + error.message)
+      new Error("controllers/authController.js:register - " + error.message)
     );
   }
 };
@@ -132,10 +134,65 @@ const activationAccount = async (req, res, next) => {
   } catch (error) {
     next(
       new Error(
-        "controllers/authController.js:activationAccount: - " + error.message
+        "controllers/authController.js:activationAccount - " + error.message
       )
     );
   }
 };
+const login = async (req, res, next) => {
+  try {
+    const valid = {
+      email: "required, isEmail",
+      password: "required",
+    };
+    const user = await dataValid(valid, req.body);
+    const data = user.data;
+    if (user.validateMessage.length > 0) {
+      return res.status(400).json({
+        errors: user.validateMessage,
+        message: "Login failed",
+        data: null,
+      });
+    }
+    const userExists = await User.findOne({
+      where: {
+        email: data.email,
+        isActive: true,
+      },
+    });
 
-export { register, activationAccount };
+    if (!userExists) {
+      return res.status(404).json({
+        errors: [" User not found"],
+        message: "Login failed",
+        data: data,
+      });
+    }
+    if (compare(data.password, userExists.password)) {
+      const userResponse = {
+        userId: userExists.userId,
+        fullName: userExists.fullName,
+        email: userExists.email,
+      };
+
+      const token = generateAccessToken(userResponse);
+      const refreshToken = generateRefreshToken(userResponse);
+      return res.status(200).json({
+        errors: [],
+        message: "Login successfully",
+        data: userResponse,
+        accessToken: token,
+        refreshToken: refreshToken,
+      });
+    } else {
+      return res.status(400).json({
+        errors: ["Email or password wrong"],
+        message: "Login failed",
+        data: data,
+      });
+    }
+  } catch (error) {
+    next(new Error("controllers/authController.js:login - " + error.message));
+  }
+};
+export { register, activationAccount, login };
