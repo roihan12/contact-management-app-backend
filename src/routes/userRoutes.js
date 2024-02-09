@@ -4,13 +4,15 @@ import {
   updateUser,
   deleteUser,
   getUser,
+  forgotPassword
 } from "../controllers/userController.js";
 
 const userRoutes = express.Router();
 
-userRoutes.patch("/users/:id", authentication, updateUser);
-userRoutes.delete("/users/:id", authentication, deleteUser);
-userRoutes.get("/users/:id", authentication, getUser);
+userRoutes.patch("/:id", authentication, updateUser);
+userRoutes.delete("/:id", authentication, deleteUser);
+userRoutes.get("/:id", authentication, getUser);
+userRoutes.post("/forgot-password", forgotPassword);
 
 
 export default userRoutes;

@@ -1,6 +1,9 @@
+import { Entropy, charset32 } from "entropy-string";
 import User from "../models/userModel.js";
+import sequelize from "../utils/db.js";
 import { dataValid } from "../validation/dataValidation.js";
 import { isExists } from "../validation/sanitization.js";
+import { sendEmailForgotPassword } from "../utils/sendMail.js";
 
 const updateUser = async (req, res, next) => {
   try {
@@ -59,7 +62,7 @@ const updateUser = async (req, res, next) => {
     }
   } catch (error) {
     next(
-      new Error("controllers/authController.js:updateUser - " + error.message)
+      new Error("controllers/userController.js:updateUser - " + error.message)
     );
   }
 };
@@ -86,7 +89,7 @@ const deleteUser = async (req, res, next) => {
     }
   } catch (error) {
     next(
-      new Error("controllers/authController.js:deleteUser - " + error.message)
+      new Error("controllers/userController.js:deleteUser - " + error.message)
     );
   }
 };
@@ -119,8 +122,79 @@ const getUser = async (req, res, next) => {
       });
     }
   } catch (error) {
-    next(new Error("controllers/authController.js:getUser - " + error.message));
+    next(new Error("controllers/userController.js:getUser - " + error.message));
+  }
+};
+const forgotPassword = async (req, res, next) => {
+  const t = await sequelize.transaction();
+  try {
+    const valid = {
+      email: "required, isEmail",
+    };
+
+    const userData = await dataValid(valid, req.body);
+    if (userData.validateMessage.length > 0) {
+      return res.status(400).json({
+        errors: userData.validateMessage,
+        message: "Forgot password failed",
+        data: null,
+      });
+    }
+
+    const user = await User.findOne({
+      where: {
+        email: userData.data.email,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({
+        errors: ["User not found"],
+        message: "Forgot password failed",
+        data: null,
+      });
+    }
+    const random = new Entropy({ bits: 60, charset: charset32 });
+    const stringPassword = random.string();
+    await User.update(
+      {
+        password: stringPassword,
+      },
+      {
+        where: {
+          userId: user.userId,
+        },
+        transaction: t,
+      }
+    );
+    const payloadEmail = {
+      fullName: user.fullName,
+      email: user.email,
+      password: stringPassword,
+    };
+    const result = await sendEmailForgotPassword(payloadEmail);
+    if (!result) {
+      await t.rollback();
+      return res.status(500).json({
+        errors: ["Send email forgot password failed"],
+        message: "Forgot password failed",
+        data: null,
+      });
+    } else {
+      await t.commit();
+      res.status(200).json({
+        errors: null,
+        mesage: "Forgot password success, please check your email!",
+        data: null,
+      });
+    }
+  } catch (error) {
+    await t.rollback();
+    next(
+      new Error(
+        "controllers/userController.js:forgotPassword - " + error.message
+      )
+    );
   }
 };
 
-export { updateUser, deleteUser , getUser};
+export { updateUser, deleteUser, getUser, forgotPassword };
