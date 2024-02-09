@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import Address from "../models/addressModel.js";
 import Contact from "../models/contactModel.js";
 import sequelize from "../utils/db.js";
@@ -39,7 +40,7 @@ const createContact = async (req, res, next) => {
     contact = {
       ...contact.data,
       userId: req.user.userId,
-      Addresses: addressValidate,
+      addresses: addressValidate,
     };
     // error handle
     if (listError.length > 0) {
@@ -55,7 +56,7 @@ const createContact = async (req, res, next) => {
     });
 
     const newAddress = await Promise.all(
-      contact.Addresses.map(async (address) => {
+      contact.addresses.map(async (address) => {
         return await Address.create(
           {
             ...address,
@@ -91,5 +92,73 @@ const createContact = async (req, res, next) => {
     );
   }
 };
+const getContact = async (req, res, next) => {
+  try {
+    const contacts = req.body;
+    let address = [];
+    if (isExists(contacts.addresses)) {
+      address = contacts.addresses;
+      delete contacts.addresses;
+    }
+    // filter addresses
+    let objAddressFilter = [];
+    const filterAddress = await new Promise((resolve, reject) => {
+      Object.entries(address).forEach(([key, value]) => {
+        objAddressFilter = {
+          ...objAddressFilter,
+          [key]: {
+            [Op.like]: "%" + value + "%",
+          },
+        };
+      });
+      resolve(objAddressFilter);
+    });
 
-export { createContact };
+    // filter contact
+    let objContactFilter = [];
+    const filterContact = await new Promise((resolve, reject) => {
+      Object.entries(contacts).forEach(([key, value]) => {
+        objContactFilter = {
+          ...objContactFilter,
+          [key]: {
+            [Op.like]: "%" + value + "%",
+          },
+        };
+      });
+      resolve(objContactFilter);
+    });
+
+    // check filter
+    let data = null;
+    if (Object.keys(filterAddress).length === 0) {
+      data = await Contact.findAll({
+        include: {
+          model: Address,
+        },
+        where: filterContact,
+        
+      });
+    } else {
+      data = await Contact.findAll({
+        include: {
+          model: Address,
+          where: filterAddress,
+        },
+        where: filterContact,
+      });
+    }
+
+    return res.status(200).json({
+      errors: [],
+      message: "Get contacts successfully",
+      data: data,
+    });
+  } catch (error) {
+    next(
+      new Error(
+        "controllers/contactController.js:getContact - " + error.message
+      )
+    );
+  }
+};
+export { createContact, getContact };
