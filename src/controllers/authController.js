@@ -4,7 +4,12 @@ import sequelize from "../utils/db.js";
 import { sendEmail } from "../utils/sendMail.js";
 import { dataValid } from "../validation/dataValidation.js";
 import { compare } from "../utils/bcrypt.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  parseJWT,
+  verifyRefreshToken,
+} from "../utils/jwt.js";
 
 const register = async (req, res, next) => {
   const t = await sequelize.transaction();
@@ -12,9 +17,13 @@ const register = async (req, res, next) => {
     fullName: "required",
     email: "required,isEmail",
     password: "required,isStrongPassword",
+    confirmPassword: "required",
   };
   try {
     const userReq = await dataValid(valid, req.body);
+    if (userReq.data.password !== userReq.data.confirmPassword) {
+      userReq.validateMessage.push("Password does not match");
+    }
     if (userReq.validateMessage.length > 0) {
       return res.status(400).json({
         errors: userReq.validateMessage,
@@ -195,4 +204,63 @@ const login = async (req, res, next) => {
     next(new Error("controllers/authController.js:login - " + error.message));
   }
 };
-export { register, activationAccount, login };
+
+const refreshToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        errors: ["Refresh token not found"],
+        message: "Refresh failed",
+        data: null,
+      });
+    }
+
+    const verify = verifyRefreshToken(token);
+
+    if (!verify) {
+      return res.status(401).json({
+        errors: ["Invalid refresh token"],
+        message: "Refresh failed",
+        data: null,
+      });
+    }
+    let data = parseJWT(token);
+    console.log(data);
+    const user = await User.findOne({
+      where: {
+        email: data.email,
+        isActive: true,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({
+        errors: ["User not found"],
+        message: "Refresh failed",
+        data: null,
+      });
+    } else {
+      const userResponse = {
+        userId: user.userId,
+        fullName: user.fullName,
+        email: user.email,
+      };
+      const token = generateAccessToken(userResponse);
+      const refreshToken = generateRefreshToken(userResponse);
+      return res.status(200).json({
+        errors: [],
+        message: "Refresh token successfully",
+        data: userResponse,
+        accessToken: token,
+        refreshToken: refreshToken,
+      });
+    }
+  } catch (error) {
+    next(
+      new Error("controllers/authController.js:refreshToken - " + error.message)
+    );
+  }
+};
+
+export { register, activationAccount, login, refreshToken };
