@@ -4,6 +4,7 @@ import { apiDocumentation } from "../../docs/apidoc.js";
 import usersRoutes from "./userRoutes.js";
 import authRoutes from "./authRoutes.js";
 import contactsRoutes from "./contactRoutes.js";
+import addressRoutes from "./addressRoutes.js";
 import { errorHandling } from "../controllers/errorHandlingController.js";
 
 const route = express.Router();
@@ -11,6 +12,7 @@ const route = express.Router();
 route.use("/api/auth", authRoutes);
 route.use("/api/users", usersRoutes);
 route.use("/api/contacts", contactsRoutes);
+route.use("/api/addresses", addressRoutes);
 
 route.use("/documentation", swaggerUi.serve, swaggerUi.setup(apiDocumentation));
 route.use("*", errorHandling);
